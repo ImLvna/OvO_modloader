@@ -10,9 +10,6 @@ module.exports = () => {return new Promise(resolve => {
 	//CONFIG, EDIT ME
 	//Url to access game
 	const gameUrl = 'https://dedragames.com/games/ovo/CrashTest/'
-	//Folder to save files to. Must be recursive
-	const downloadDir = 'gameFiles'
-
 
 	if(!gameUrl.endsWith('/')) gameUrl += '/'
 	request(gameUrl + 'offline.js', function (error, response, body) {
@@ -27,8 +24,8 @@ module.exports = () => {return new Promise(resolve => {
 				let dirs = i.split('/')
 				dirs.pop()
 				dirs = dirs.join('/')
-				fs.mkdir(`${downloadDir}/${dirs}`, { recursive: true }, ()=>{})
-				const file = fs.createWriteStream(downloadDir + '/' + i);
+				fs.mkdir(`gameFiles/${dirs}`, { recursive: true }, ()=>{})
+				const file = fs.createWriteStream('gameFiles/' + i);
 				const request = https.get(gameUrl + i, function(response) {
 					response.pipe(file);
 					file.on('close', () => {
