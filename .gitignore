@@ -1,0 +1,5 @@
+gameFiles
+node_modules
+yarn.lock
+mods/gitignore_*
+overwrites/gitignore_*
