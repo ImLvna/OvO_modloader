@@ -20,7 +20,6 @@ module.exports = () => {return new Promise(resolve => {
 			if(body.charCodeAt(0) === 65279) body = body.trim()
 	    	let fileList = JSON.parse(body).fileList;
 			if(!fileList.includes('')) fileList.push('')
-			console.log(fileList.length)
 			let finished = 0
 			console.log('Downloading files. Do not close until finished...')
 			fileList.forEach((i) =>{
@@ -29,7 +28,7 @@ module.exports = () => {return new Promise(resolve => {
 				dirs.pop()
 				dirs = dirs.join('/')
 				fs.mkdir(`${downloadDir}/${dirs}`, { recursive: true }, ()=>{})
-				const file = fs.createWriteStream(downloadDir + i);
+				const file = fs.createWriteStream(downloadDir + '/' + i);
 				const request = https.get(gameUrl + i, function(response) {
 					response.pipe(file);
 					file.on('close', () => {
