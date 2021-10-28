@@ -58,8 +58,18 @@ const enableOverwrites = true;
 
     app.use(express.static(__dirname + '/gameFiles'));
 
+    //VERY shitty string manip
+    //none: 'running at http...'
+    //mod: 'running with mods at http...'
+    //overwrite: 'running with overwrites at http...'
+    //both: 'running with mods and overwrites at http...'
+    let statusStr = '';
+    if(enableMods) {
+        statusStr = 'with mods ';
+        if(enableOverwrites) statusStr += 'and overwrites '
+    } else if(enableOverwrites) statusStr = 'with overwrites '
     app.listen(8080, () => {
-        console.log(`OvO running ${enableMods ? 'with mods ' : ''}at http://localhost:8080`)
+        console.log(`OvO running ${statusStr}at http://localhost:8080`)
     })
 
 })();
