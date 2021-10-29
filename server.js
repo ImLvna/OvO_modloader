@@ -3,9 +3,15 @@ const fs = require('fs');
 const path = require('path');
 const { downloadGame, getVData } = require('./download.js');
 var app = express();
+const sendFileOptions = {
+    root: path.join(__dirname),
+}
 
 
-
+//To disable a feature:
+//  node server.js --no-FEATURENAME
+//ex: node server.js --no-speedrun
+//ex: node server.js --no-mods
 
 //DEFAULT CONFIG
 const enableMods = true;
@@ -15,6 +21,10 @@ const enableMods = true;
 const enableOverwrites = true;
 //Version of the game when none is specified
 const gameVersion = 'CrashTest';
+//Speedrun mode!
+//Adds:
+//  Mobile mode below 1.4.4
+const speedrunMode = false;
 
 //Order of loading
 //1. If we are using debug mode, load the debug overwrites
@@ -50,6 +60,10 @@ const argv = yargs(hideBin(process.argv))
             .describe('o', 'Enable overwrites')
             .boolean('o')
             .default('o', enableOverwrites)
+        .alias('s', 'speedrun')
+            .describe('s', 'Enables speedrun-safe mods')
+            .boolean('s')
+            .default('s', speedrunMode)
         .alias('d', 'debug')
             .describe('d', 'Use debug overwrites')
             .boolean('d')
@@ -69,6 +83,15 @@ const argv = yargs(hideBin(process.argv))
 
 
 (async () => {if(!debug){
+
+    if(argv.s) {
+        argv.m = false
+        argv.o = false
+        argv.d = false
+        console.log('Speedrun mode enabled. Mods, overwrites, and debug are disabled.')
+    }
+
+
     fs.mkdirSync(`mods/${argv.v}`, {recursive: true});
     fs.mkdirSync('mods/default', {recursive: true});
     fs.mkdirSync(`overwrites/${argv.v}`, {recursive: true});
@@ -121,6 +144,27 @@ const argv = yargs(hideBin(process.argv))
         app.use(express.static('mods/default'));
     }
 
+    if(argv.s) {
+
+        let modStr = '\n\n	<!--- lvnaMod Loader Speedrun Edition --->\n	<script src="speedrun.js"></script>\n	<!--- lvnaMod Loader Speedrun Edition --->'
+
+        function indexHandler(req, res) {
+            fs.readFile(`gameFiles/${argv.v}/index.html`, 'utf8', function(err, data) {
+                if (err) {
+                    res.sendStatus(404);
+                } else {
+                    res.send(data.replace(/(<script src="c2runtime\.js"><\/script>)/, `$1${modStr}`));
+                }
+            });
+        }
+        app.get('/index.html', indexHandler);
+        app.get('/', indexHandler);
+        app.get('/index', indexHandler);
+        app.get('/speedrun.js', (req, res) => {
+            res.sendFile(`speedrun.js`, sendFileOptions)
+        })
+    }
+
     if(argv.o) app.use(express.static('overwrites'));
     if(argv.d) app.use(express.static(`debug/${argv.v}`));
 
@@ -136,6 +180,7 @@ const argv = yargs(hideBin(process.argv))
         statusStr = 'with mods ';
         if(argv.o) statusStr += 'and overwrites '
     } else if(argv.o) statusStr = 'with overwrites '
+    if(argv.s) statusStr = 'in speedrun mode '
     app.listen(8080, () => {
         console.log(`OvO ${argv.v} running ${statusStr}at http://localhost:8080`)
     })
