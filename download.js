@@ -3,44 +3,49 @@ const fs = require('fs');
 const request = require('request');
 
 
-
-
-
-module.exports = () => {return new Promise(resolve => {
-	//CONFIG, EDIT ME
-	//Url to access game
-	const gameUrl = 'https://dedragames.com/games/ovo/CrashTest/'
-
-	if(!gameUrl.endsWith('/')) gameUrl += '/'
-	request(gameUrl + 'offline.js', function (error, response, body) {
+module.exports.getVData = (ver) => {return new Promise(resolve => {
+	request(`https://dedragames.com/games/ovo/${ver}/offline.js`, function (error, response, body) {
 		if (!error && response.statusCode == 200) {
 			if(body.charCodeAt(0) === 65279) body = body.trim()
-	    	let fileList = JSON.parse(body).fileList;
-			if(!fileList.includes('')) fileList.push('')
-			let finished = 0
-			console.log('Downloading files. Do not close until finished...')
-			fileList.forEach((i) =>{
-				if(i === '') i = 'index.html';
-				let dirs = i.split('/')
-				dirs.pop()
-				dirs = dirs.join('/')
-				fs.mkdir(`gameFiles/${dirs}`, { recursive: true }, ()=>{})
-				const file = fs.createWriteStream('gameFiles/' + i);
-				const request = https.get(gameUrl + i, function(response) {
-					response.pipe(file);
-					file.on('close', () => {
-						finished++;
-						process.stdout.clearLine();
-	    				process.stdout.cursorTo(0);
-	    				process.stdout.write(`${finished}/${fileList.length} files`);
-						if(finished === fileList.length) {
-							console.log('\nDone!');
-							resolve()
-						}
-					})
-				});
-			});
+			resolve(JSON.parse(body))
 		}
 	})
+})};
 
+
+module.exports.downloadGame = (ver) => {return new Promise(resolve => {
+	const gameUrl = `https://dedragames.com/games/ovo/${ver}/`
+	module.exports.getVData(ver).then(body => {
+		let fileList = body.fileList;
+		if(!fileList.includes('')) fileList.push('')
+		let finished = 0
+		console.log(`Downloading files for version ${ver}. Do not close until finished...`)
+		fileList.forEach((i) =>{
+			if(i === '') i = 'index.html';
+			let dirs = i.split('/')
+			dirs.pop()
+			dirs = dirs.join('/')
+			fs.mkdirSync(`gameFiles/${ver}/${dirs}`, { recursive: true })
+			const file = fs.createWriteStream(`gameFiles/${ver}/` + i);
+			const request = https.get(gameUrl + i, function(response) {
+				response.pipe(file);
+				file.on('close', () => {
+					finished++;
+					process.stdout.clearLine();
+					process.stdout.cursorTo(0);
+					process.stdout.write(`${finished}/${fileList.length} files`);
+					if(finished === fileList.length) {
+						let verData = {
+							readableVer: ver,
+							ver: body.version,
+						}
+						fs.writeFile(`gameFiles/${ver}/versionData.json`, JSON.stringify(verData, null, 2), () => {
+							resolve()
+							console.log('\nDone!');
+						})
+					}
+				})
+			});
+		})
+	})
 })};

@@ -1,8 +1,11 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const downloadGame = require('./download.js');
+const { downloadGame, getVData } = require('./download.js');
 var app = express();
+
+
+
 
 //CONFIG
 const enableMods = true;
@@ -10,7 +13,8 @@ const enableMods = true;
 //Enable this and copy the file to the overwrites folder
 //This will force OvO to use the overwritten file
 const enableOverwrites = true;
-
+//Version of the game when none is specified
+const defaultVersion = 'CrashTest';
 
 //Order of loading
 //1. If mods are enabled, load all the mods' .js files into index.html
@@ -18,12 +22,46 @@ const enableOverwrites = true;
 //3. Load the default files
 
 
+
+const yargs = require('yargs/yargs')
+const { hideBin } = require('yargs/helpers')
+
+const argv = yargs(hideBin(process.argv))
+    .usage('Usage: $0 [options]')
+    .command('$0', 'default')
+    .example('$0 -v 1.4.4', 'Play version 1.4.4')
+    .example('$0 -v CrashTest', 'Play version CrashTest')
+    .example('$0', 'Play the default version set in server.js')
+    .version(false)
+    .alias('v', 'version')
+    .nargs('v', 1)
+    .describe('v', 'The version to play')
+    .string('v')
+    .default('v', defaultVersion)
+    .help('h')
+    .alias('h', 'help')
+    .nargs('h', 0)
+    .epilog('LvnaLoader')   
+    .argv;
+
+
+
 (async () => {
 
+    
+
     //Check if the game is already downloaded
-    if (!fs.existsSync('./gameFiles')) {
+    if (!fs.existsSync('./gameFiles/' + argv.v + '/versionData.json')) {
         console.log('Game not found, downloading...');
-        await downloadGame();
+        await downloadGame(argv.v);
+    } else {
+        let vData = JSON.parse(fs.readFileSync('./gameFiles/' + argv.v + '/versionData.json', 'utf8'));
+        let onlineVData = await getVData(argv.v);
+        if(vData.ver !== onlineVData.version) {
+            console.log('Update Required. Deleting old files...');
+            fs.rmdirSync('./gameFiles/' + argv.v, { recursive: true });
+            await downloadGame(argv.v);
+        }
     }
 
     if(enableMods) {
@@ -38,11 +76,11 @@ const enableOverwrites = true;
         modStr += '\n	<!--- lvnaMod Loader Mods --->'
 
         function indexHandler(req, res) {
-            fs.readFile(path.join(__dirname, 'gameFiles', 'index.html'), function(err, data) {
+            fs.readFile(path.join(__dirname, 'gameFiles', argv.v ,'index.html'), 'utf8', function(err, data) {
                 if (err) {
                     res.sendStatus(404);
                 } else {
-                    res.send(data.toString().replace('<script src="c2runtime.js"></script>', '<script src="c2runtime.js"></script>'+modStr));
+                    res.send(data.replace('<script src="c2runtime.js"></script>', '<script src="c2runtime.js"></script>'+modStr));
                 }
             });
         }
@@ -56,7 +94,7 @@ const enableOverwrites = true;
 
     if(enableOverwrites) app.use(express.static(__dirname + '/overwrites'));
 
-    app.use(express.static(__dirname + '/gameFiles'));
+    app.use(express.static(__dirname + '/gameFiles/' + argv.v));
 
     //VERY shitty string manip
     //none: 'running at http...'
@@ -69,7 +107,7 @@ const enableOverwrites = true;
         if(enableOverwrites) statusStr += 'and overwrites '
     } else if(enableOverwrites) statusStr = 'with overwrites '
     app.listen(8080, () => {
-        console.log(`OvO running ${statusStr}at http://localhost:8080`)
+        console.log(`OvO ${argv.v} running ${statusStr}at http://localhost:8080`)
     })
 
 })();
