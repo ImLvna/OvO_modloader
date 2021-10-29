@@ -3,17 +3,19 @@ const fs = require('fs');
 const request = require('request');
 
 
-module.exports.getVData = (ver) => {return new Promise(resolve => {
+module.exports.getVData = (ver) => {return new Promise((resolve, reject) => {try{
 	request(`https://dedragames.com/games/ovo/${ver}/offline.js`, function (error, response, body) {
 		if (!error && response.statusCode == 200) {
 			if(body.charCodeAt(0) === 65279) body = body.trim()
 			resolve(JSON.parse(body))
+		} else {
+			reject(error || response.statusCode)
 		}
 	})
-})};
+}catch(e){reject(e)}})};
 
 
-module.exports.downloadGame = (ver) => {return new Promise(resolve => {
+module.exports.downloadGame = (ver) => {return new Promise((resolve, reject) => {try{
 	const gameUrl = `https://dedragames.com/games/ovo/${ver}/`
 	module.exports.getVData(ver).then(body => {
 		let fileList = body.fileList;
@@ -26,7 +28,7 @@ module.exports.downloadGame = (ver) => {return new Promise(resolve => {
 			dirs.pop()
 			dirs = dirs.join('/')
 			fs.mkdirSync(`gameFiles/${ver}/${dirs}`, { recursive: true })
-			const file = fs.createWriteStream(`gameFiles/${ver}/` + i);
+			const file = fs.createWriteStream(`gameFiles/${ver}/${i}`);
 			const request = https.get(gameUrl + i, function(response) {
 				response.pipe(file);
 				file.on('close', () => {
@@ -47,5 +49,5 @@ module.exports.downloadGame = (ver) => {return new Promise(resolve => {
 				})
 			});
 		})
-	})
-})};
+	}, err => {reject(err)})
+}catch(e){reject(e)}})};
