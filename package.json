@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "npm run obfsSpeed",
+    "build": "npm run obfsSpeed && npm run postbuild",
+    "postbuild": "node postbuild.js",
     "obfsSpeed": "javascript-obfuscator unob_speedrunload.js --output speedrunload.js"
   },
   "dependencies": {
