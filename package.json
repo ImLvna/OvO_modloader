@@ -1,6 +1,11 @@
 {
+  "scripts": {
+    "build": "npm run obfsSpeed",
+    "obfsSpeed": "javascript-obfuscator unob_speedrunload.js --output speedrunload.js"
+  },
   "dependencies": {
     "express": "^4.17.1",
+    "javascript-obfuscator": "^3.0.0",
     "request": "^2.88.2",
     "yargs": "^17.2.1"
   }

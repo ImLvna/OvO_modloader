@@ -146,7 +146,7 @@ const argv = yargs(hideBin(process.argv))
 
     if(argv.s) {
 
-        let modStr = '\n\n	<!--- lvnaMod Loader Speedrun Edition --->\n	<script src="speedrun.js"></script>\n	<!--- lvnaMod Loader Speedrun Edition --->'
+        let modStr = '\n\n	<!--- lvnaMod Loader Speedrun Edition --->\n	<script src="speedrunload.js"></script>\n	<!--- lvnaMod Loader Speedrun Edition --->'
 
         function indexHandler(req, res) {
             fs.readFile(`gameFiles/${argv.v}/index.html`, 'utf8', function(err, data) {
@@ -162,6 +162,9 @@ const argv = yargs(hideBin(process.argv))
         app.get('/index', indexHandler);
         app.get('/speedrun.js', (req, res) => {
             res.sendFile(`speedrun.js`, sendFileOptions)
+        })
+        app.get('/speedrunload.js', (req, res) => {
+            res.sendFile(`speedrunload.js`, sendFileOptions)
         })
     }
 
